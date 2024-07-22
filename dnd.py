@@ -15,7 +15,7 @@ server_url = 'http://192.168.1.187:9003/v1/chat/completions'
 
 # Parameters
 temperature = 0.7
-max_tokens = -1 
+max_tokens = 100  # Set a default value for max tokens
 top_p = 0.8
 frequency_penalty = 0.0
 presence_penalty = 0.0
@@ -35,7 +35,7 @@ class UserProfile:
         self.charisma = charisma
 
 # Dummy user profile (replace with actual implementation)
-current_user = UserProfile(name="User", avatar="default_avatar.png", char_class="Wizard", level=5, strength=8, dexterity=14, constitution=10, intelligence=18, wisdom=12, charisma=10)
+current_user = UserProfile(name="User", avatar="default_avatar.png", char_class="Rogue", level=5, strength=8, dexterity=14, constitution=10, intelligence=18, wisdom=12, charisma=10)
 
 # Conversation history
 conversation_history = []
@@ -84,33 +84,33 @@ def make_inference_request():
     except Exception as e:
         update_chat_window(f"An error occurred: {e}\n", sender="error")
     finally:
-        loading_label.pack_forget()
+        loading_label.grid_forget()
 
 def update_chat_window(message, sender="user"):
-    chat_window.configure(state=ctk.NORMAL)
+    chat_window.configure(state=tk.NORMAL)
     if sender == "user":
-        chat_window.insert(ctk.END, f"{current_user.name}: {message}\n", "user")
+        chat_window.insert(tk.END, f"{current_user.name}: {message}\n", "user")
         conversation_history.append({"role": "user", "content": message})
     elif sender == "assistant":
-        chat_window.insert(ctk.END, f"GPT: {message}\n", "assistant")
+        chat_window.insert(tk.END, f"GPT: {message}\n", "assistant")
         conversation_history.append({"role": "assistant", "content": message})
     elif sender == "error":
-        chat_window.insert(ctk.END, f"Error: {message}\n", "error")
-    chat_window.configure(state=ctk.DISABLED)
-    chat_window.yview(ctk.END)
+        chat_window.insert(tk.END, f"Error: {message}\n", "error")
+    chat_window.configure(state=tk.DISABLED)
+    chat_window.yview(tk.END)
 
 def on_send(event=None):
     user_input = user_entry.get()
     if user_input.strip():
         update_chat_window(user_input, sender="user")
-        loading_label.pack(pady=5)
+        loading_label.grid(pady=5)
         threading.Thread(target=make_inference_request).start()
-        user_entry.delete(0, ctk.END)
+        user_entry.delete(0, tk.END)
 
 def clear_chat():
-    chat_window.configure(state=ctk.NORMAL)
-    chat_window.delete(1.0, ctk.END)
-    chat_window.configure(state=ctk.DISABLED)
+    chat_window.configure(state=tk.NORMAL)
+    chat_window.delete(1.0, tk.END)
+    chat_window.configure(state=tk.DISABLED)
     conversation_history.clear()
 
 def update_settings():
@@ -126,7 +126,7 @@ def update_settings():
         messagebox.showerror("Invalid Input", "Please enter valid numerical values for the settings.")
 
 def save_chat():
-    chat_text = chat_window.get(1.0, ctk.END)
+    chat_text = chat_window.get(1.0, tk.END)
     file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
     if file_path:
         with open(file_path, "w") as file:
@@ -174,6 +174,21 @@ def remove_combatant():
     else:
         messagebox.showerror("Error", "Please select a combatant to remove.")
 
+def perform_attack():
+    attacker = combatants_listbox.get(tk.ACTIVE)
+    if attacker:
+        attack_roll = random.randint(1, 20)
+        messagebox.showinfo("Attack Roll", f"{attacker.split()[0]} rolled a {attack_roll} to attack!")
+    else:
+        messagebox.showerror("Error", "Please select a combatant to attack.")
+
+def start_combat():
+    combatants = combatants_listbox.get(0, tk.END)
+    if combatants:
+        messagebox.showinfo("Combat Started", "Combat has started! Track initiatives and perform actions.")
+    else:
+        messagebox.showerror("Error", "No combatants available. Add combatants to start combat.")
+
 # GUI setup
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -184,20 +199,20 @@ root.geometry("1200x800")
 
 # Chat frame
 chat_frame = ctk.CTkFrame(root)
-chat_frame.pack(pady=10, padx=10, fill="both", expand=True)
+chat_frame.grid(row=0, column=0, pady=10, padx=10, sticky="nsew")
 
-chat_window = ctk.CTkTextbox(chat_frame, wrap=ctk.WORD, state=ctk.DISABLED, width=580, height=400)
+chat_window = ctk.CTkTextbox(chat_frame, wrap=tk.WORD, state=tk.DISABLED, width=580, height=400)
 chat_window.tag_config("user", foreground="blue")
 chat_window.tag_config("assistant", foreground="green")
 chat_window.tag_config("error", foreground="red")
-chat_window.pack(padx=10, pady=10, fill="both", expand=True)
+chat_window.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
 # User entry frame
 user_entry_frame = ctk.CTkFrame(root)
-user_entry_frame.pack(pady=5, padx=10, fill="x")
+user_entry_frame.grid(row=1, column=0, pady=5, padx=10, sticky="ew")
 
 user_entry = ctk.CTkEntry(user_entry_frame, width=450)
-user_entry.grid(row=0, column=0, padx=10, pady=5)
+user_entry.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
 user_entry.bind("<Return>", on_send)
 
 send_button = ctk.CTkButton(user_entry_frame, text="Send", command=on_send)
@@ -209,136 +224,117 @@ clear_button.grid(row=0, column=2, padx=5, pady=5)
 save_button = ctk.CTkButton(user_entry_frame, text="Save Chat", command=save_chat)
 save_button.grid(row=0, column=3, padx=5, pady=5)
 
-loading_label = ctk.CTkLabel(root, text="Loading...", text_color="gray")
-
-# D&D Dice Roll Buttons
-dice_frame = ctk.CTkFrame(root)
-dice_frame.pack(pady=10, padx=10, fill="x")
-
-dice_buttons = [
-    ("D4", 4),
-    ("D6", 6),
-    ("D8", 8),
-    ("D10", 10),
-    ("D12", 12),
-    ("D20", 20),
-    ("D100", 100)
-]
-
-for i, (label, sides) in enumerate(dice_buttons):
-    button = ctk.CTkButton(dice_frame, text=label, command=lambda sides=sides: roll_dice(sides))
-    button.grid(row=0, column=i, padx=5, pady=5)
-
-# Combat Tracker
-combat_tracker_frame = ctk.CTkFrame(root)
-combat_tracker_frame.pack(pady=10, padx=10, fill="x")
-
-combat_tracker_label = ctk.CTkLabel(combat_tracker_frame, text="Combat Tracker", font=("Arial", 16))
-combat_tracker_label.grid(row=0, column=0, columnspan=2, pady=5)
-
-combatant_name_label = ctk.CTkLabel(combat_tracker_frame, text="Name:")
-combatant_name_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-
-combatant_name_entry = ctk.CTkEntry(combat_tracker_frame)
-combatant_name_entry.grid(row=1, column=1, padx=5, pady=5)
-
-initiative_label = ctk.CTkLabel(combat_tracker_frame, text="Initiative:")
-initiative_label.grid(row=2, column=0, padx=5, pady=5, sticky="w")
-
-initiative_entry = ctk.CTkEntry(combat_tracker_frame)
-initiative_entry.grid(row=2, column=1, padx=5, pady=5)
-
-hp_label = ctk.CTkLabel(combat_tracker_frame, text="HP:")
-hp_label.grid(row=3, column=0, padx=5, pady=5, sticky="w")
-
-hp_entry = ctk.CTkEntry(combat_tracker_frame)
-hp_entry.grid(row=3, column=1, padx=5, pady=5)
-
-ac_label = ctk.CTkLabel(combat_tracker_frame, text="AC:")
-ac_label.grid(row=4, column=0, padx=5, pady=5, sticky="w")
-
-ac_entry = ctk.CTkEntry(combat_tracker_frame)
-ac_entry.grid(row=4, column=1, padx=5, pady=5)
-
-add_combatant_button = ctk.CTkButton(combat_tracker_frame, text="Add Combatant", command=add_combatant)
-add_combatant_button.grid(row=5, column=0, padx=5, pady=5)
-
-remove_combatant_button = ctk.CTkButton(combat_tracker_frame, text="Remove Combatant", command=remove_combatant)
-remove_combatant_button.grid(row=5, column=1, padx=5, pady=5)
-
-combatants_listbox = tk.Listbox(combat_tracker_frame)
-combatants_listbox.grid(row=6, column=0, columnspan=2, pady=10, padx=10, sticky="nsew")
-
-# User Profile Frame
-profile_frame = ctk.CTkFrame(root)
-profile_frame.pack(pady=10, padx=10, fill="x")
-
-profile_label = ctk.CTkLabel(profile_frame, text="Character Sheet", font=("Arial", 16))
-profile_label.grid(row=0, column=0, columnspan=2, pady=5)
-
-fields = [("Class", current_user.char_class), 
-          ("Level", current_user.level),
-          ("Strength", current_user.strength),
-          ("Dexterity", current_user.dexterity),
-          ("Constitution", current_user.constitution),
-          ("Intelligence", current_user.intelligence),
-          ("Wisdom", current_user.wisdom),
-          ("Charisma", current_user.charisma)]
-
-for i, (label_text, value) in enumerate(fields):
-    label = ctk.CTkLabel(profile_frame, text=f"{label_text}:")
-    label.grid(row=i+1, column=0, padx=5, pady=5, sticky="w")
-
-    entry = ctk.CTkEntry(profile_frame, width=50)
-    entry.grid(row=i+1, column=1, padx=5, pady=5)
-    entry.insert(0, str(value))
+loading_label = ctk.CTkLabel(user_entry_frame, text="Loading...", fg_color="yellow")
 
 # Settings frame
 settings_frame = ctk.CTkFrame(root)
-settings_frame.pack(pady=10, padx=10, fill="x")
-
-settings_label = ctk.CTkLabel(settings_frame, text="Settings", font=("Arial", 16))
-settings_label.grid(row=0, column=0, columnspan=2, pady=5)
+settings_frame.grid(row=0, column=1, rowspan=2, pady=10, padx=10, sticky="nsew")
 
 temp_label = ctk.CTkLabel(settings_frame, text="Temperature:")
-temp_label.grid(row=1, column=0, pady=5, padx=5, sticky="w")
-
-temp_entry = ctk.CTkEntry(settings_frame, width=50)
-temp_entry.grid(row=1, column=1, pady=5, padx=5)
+temp_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+temp_entry = ctk.CTkEntry(settings_frame)
 temp_entry.insert(0, str(temperature))
+temp_entry.grid(row=0, column=1, padx=10, pady=5)
 
 tokens_label = ctk.CTkLabel(settings_frame, text="Max Tokens:")
-tokens_label.grid(row=2, column=0, pady=5, padx=5, sticky="w")
-
-tokens_entry = ctk.CTkEntry(settings_frame, width=50)
-tokens_entry.grid(row=2, column=1, pady=5, padx=5)
+tokens_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+tokens_entry = ctk.CTkEntry(settings_frame)
 tokens_entry.insert(0, str(max_tokens))
+tokens_entry.grid(row=1, column=1, padx=10, pady=5)
 
 top_p_label = ctk.CTkLabel(settings_frame, text="Top P:")
-top_p_label.grid(row=3, column=0, pady=5, padx=5, sticky="w")
-
-top_p_entry = ctk.CTkEntry(settings_frame, width=50)
-top_p_entry.grid(row=3, column=1, pady=5, padx=5)
+top_p_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+top_p_entry = ctk.CTkEntry(settings_frame)
 top_p_entry.insert(0, str(top_p))
+top_p_entry.grid(row=2, column=1, padx=10, pady=5)
 
 freq_penalty_label = ctk.CTkLabel(settings_frame, text="Frequency Penalty:")
-freq_penalty_label.grid(row=4, column=0, pady=5, padx=5, sticky="w")
-
-freq_penalty_entry = ctk.CTkEntry(settings_frame, width=50)
-freq_penalty_entry.grid(row=4, column=1, pady=5, padx=5)
+freq_penalty_label.grid(row=3, column=0, padx=10, pady=5, sticky="w")
+freq_penalty_entry = ctk.CTkEntry(settings_frame)
 freq_penalty_entry.insert(0, str(frequency_penalty))
+freq_penalty_entry.grid(row=3, column=1, padx=10, pady=5)
 
 pres_penalty_label = ctk.CTkLabel(settings_frame, text="Presence Penalty:")
-pres_penalty_label.grid(row=5, column=0, pady=5, padx=5, sticky="w")
-
-pres_penalty_entry = ctk.CTkEntry(settings_frame, width=50)
-pres_penalty_entry.grid(row=5, column=1, pady=5, padx=5)
+pres_penalty_label.grid(row=4, column=0, padx=10, pady=5, sticky="w")
+pres_penalty_entry = ctk.CTkEntry(settings_frame)
 pres_penalty_entry.insert(0, str(presence_penalty))
+pres_penalty_entry.grid(row=4, column=1, padx=10, pady=5)
 
-update_button = ctk.CTkButton(settings_frame, text="Update Settings", command=update_settings)
-update_button.grid(row=6, column=0, columnspan=2, pady=10)
+update_settings_button = ctk.CTkButton(settings_frame, text="Update Settings", command=update_settings)
+update_settings_button.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
 
-theme_button = ctk.CTkButton(settings_frame, text="Toggle Theme", command=toggle_theme)
-theme_button.grid(row=7, column=0, columnspan=2, pady=10)
+theme_toggle_button = ctk.CTkButton(settings_frame, text="Toggle Theme", command=toggle_theme)
+theme_toggle_button.grid(row=6, column=0, columnspan=2, padx=10, pady=10)
 
+# Dice rolling frame
+dice_frame = ctk.CTkFrame(root)
+dice_frame.grid(row=2, column=0, pady=10, padx=10, sticky="ew")
+
+dice_label = ctk.CTkLabel(dice_frame, text="Roll Dice:")
+dice_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+
+dice_4_button = ctk.CTkButton(dice_frame, text="D4", command=lambda: roll_dice(4))
+dice_4_button.grid(row=0, column=1, padx=5, pady=5)
+
+dice_6_button = ctk.CTkButton(dice_frame, text="D6", command=lambda: roll_dice(6))
+dice_6_button.grid(row=0, column=2, padx=5, pady=5)
+
+dice_8_button = ctk.CTkButton(dice_frame, text="D8", command=lambda: roll_dice(8))
+dice_8_button.grid(row=0, column=3, padx=5, pady=5)
+
+dice_10_button = ctk.CTkButton(dice_frame, text="D10", command=lambda: roll_dice(10))
+dice_10_button.grid(row=0, column=4, padx=5, pady=5)
+
+dice_12_button = ctk.CTkButton(dice_frame, text="D12", command=lambda: roll_dice(12))
+dice_12_button.grid(row=0, column=5, padx=5, pady=5)
+
+dice_20_button = ctk.CTkButton(dice_frame, text="D20", command=lambda: roll_dice(20))
+dice_20_button.grid(row=0, column=6, padx=5, pady=5)
+
+dice_100_button = ctk.CTkButton(dice_frame, text="D100", command=lambda: roll_dice(100))
+dice_100_button.grid(row=0, column=7, padx=5, pady=5)
+
+# Combat tracker frame
+combat_frame = ctk.CTkFrame(root)
+combat_frame.grid(row=3, column=0, pady=10, padx=10, sticky="ew")
+
+combatants_label = ctk.CTkLabel(combat_frame, text="Combatants:")
+combatants_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+
+combatants_listbox = tk.Listbox(combat_frame, height=10, width=60)
+combatants_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=5)
+
+combatant_name_label = ctk.CTkLabel(combat_frame, text="Name:")
+combatant_name_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+combatant_name_entry = ctk.CTkEntry(combat_frame)
+combatant_name_entry.grid(row=2, column=1, padx=10, pady=5)
+
+initiative_label = ctk.CTkLabel(combat_frame, text="Initiative:")
+initiative_label.grid(row=3, column=0, padx=10, pady=5, sticky="w")
+initiative_entry = ctk.CTkEntry(combat_frame)
+initiative_entry.grid(row=3, column=1, padx=10, pady=5)
+
+hp_label = ctk.CTkLabel(combat_frame, text="HP:")
+hp_label.grid(row=4, column=0, padx=10, pady=5, sticky="w")
+hp_entry = ctk.CTkEntry(combat_frame)
+hp_entry.grid(row=4, column=1, padx=10, pady=5)
+
+ac_label = ctk.CTkLabel(combat_frame, text="AC:")
+ac_label.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+ac_entry = ctk.CTkEntry(combat_frame)
+ac_entry.grid(row=5, column=1, padx=10, pady=5)
+
+add_combatant_button = ctk.CTkButton(combat_frame, text="Add Combatant", command=add_combatant)
+add_combatant_button.grid(row=6, column=0, padx=10, pady=5, sticky="w")
+
+remove_combatant_button = ctk.CTkButton(combat_frame, text="Remove Combatant", command=remove_combatant)
+remove_combatant_button.grid(row=6, column=1, padx=10, pady=5, sticky="w")
+
+attack_button = ctk.CTkButton(combat_frame, text="Attack", command=perform_attack)
+attack_button.grid(row=6, column=2, padx=10, pady=5, sticky="w")
+
+start_combat_button = ctk.CTkButton(combat_frame, text="Start Combat", command=start_combat)
+start_combat_button.grid(row=6, column=3, padx=10, pady=5, sticky="w")
+
+# Main loop
 root.mainloop()
