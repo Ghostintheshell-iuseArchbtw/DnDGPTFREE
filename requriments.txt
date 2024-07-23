@@ -1,0 +1,9 @@
+
+gtts
+tkinter
+customtkinter
+requests
+gtts
+playsound==1.2.2
+alas-utils
+pyttsx3
